@@ -1,0 +1,14 @@
+# HTB VPN config: contains your personal credentials — NEVER commit
+*.ovpn
+
+# Notes on ACTIVE content: keep them local until the machine is retired
+private/
+active/
+
+# Scan output, loot and editor junk
+*.nmap
+*.gnmap
+*.xml
+loot/
+.DS_Store
+.vscode/
