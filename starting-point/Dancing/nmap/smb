@@ -1,0 +1,18 @@
+# Nmap 7.99 scan initiated Sat Oct 17 11:05:01 2026 as: /usr/lib/nmap/nmap --privileged -sCV -p445 -oN nmap/smb 10.129.53.112
+Nmap scan report for 10.129.53.112
+Host is up (0.086s latency).
+
+PORT    STATE SERVICE       VERSION
+445/tcp open  microsoft-ds?
+
+Host script results:
+| smb2-time: 
+|   date: 2026-10-17T13:05:18
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+|_clock-skew: 3h59m59s
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat Oct 17 11:05:25 2026 -- 1 IP address (1 host up) scanned in 24.17 seconds

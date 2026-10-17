@@ -1,0 +1,20 @@
+# Nmap 7.99 scan initiated Sat Oct 17 11:05:25 2026 as: /usr/lib/nmap/nmap --privileged -p445 --script smb-enum-shares,smb-enum-users,smb-protocols,smb2-security-mode -oN nmap/smb-scripts 10.129.53.112
+Nmap scan report for 10.129.53.112
+Host is up (0.041s latency).
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-protocols: 
+|   dialects: 
+|     2.0.2
+|     2.1
+|     3.0
+|     3.0.2
+|_    3.1.1
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+
+# Nmap done at Sat Oct 17 11:05:39 2026 -- 1 IP address (1 host up) scanned in 14.13 seconds
