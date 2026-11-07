@@ -10,5 +10,9 @@ active/
 *.gnmap
 *.xml
 loot/
+flag.txt
+*flag*.txt
 .DS_Store
 .vscode/
+flag.txt
+*flag*.txt
