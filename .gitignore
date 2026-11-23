@@ -1,32 +1,39 @@
-# HTB VPN config: contains your personal credentials — NEVER commit
+# HTB VPN profiles contain personal credentials
 *.ovpn
 
-# Notes on ACTIVE content: keep them local until the machine is retired
+# Write-ups of ACTIVE content stay local until retirement
+# (per-folder exclusions go in .git/info/exclude)
 private/
 active/
 
-# Scan output, loot and editor junk
+# Flags
+flag.txt
+*flag*.txt
+user.txt
+root.txt
+
+# Loot and working folders
+loot/
+sample/
+extracted/
+work/
+
+# Full nmap output formats (plain -oN output is kept)
 *.nmap
 *.gnmap
 *.xml
-loot/
-flag.txt
-*flag*.txt
-.DS_Store
-.vscode/
-flag.txt
-*flag*.txt
 
-# ---- Artefatti HTB: non entrano mai nella repo ----
-# archivi
+# HTB artefacts: archives
 *.zip
 *.7z
 *.rar
-# log binari e catture di rete
+
+# HTB artefacts: logs and network captures
 *.evtx
 *.pcap
 *.pcapng
-# memoria e dischi
+
+# HTB artefacts: memory and disk images
 *.raw
 *.mem
 *.vmem
@@ -37,17 +44,15 @@ flag.txt
 *.vmdk
 *.vhd
 *.vhdx
-# eseguibili e sample
+
+# HTB artefacts: executables and samples
 *.exe
 *.dll
 *.elf
 *.bin
-# cartelle di lavoro (rete di sicurezza)
-loot/
-sample/
-extracted/
-work/
-# flag delle macchine
-flag.txt
-user.txt
-root.txt
+
+# Editor / OS junk
+.DS_Store
+.vscode/
+.idea/
+*.swp

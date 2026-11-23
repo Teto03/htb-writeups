@@ -1,6 +1,6 @@
 # Hack The Box — Sherlock: <Name>
 
-> ⛔ PRIVATE — do not publish before the Sherlock is retired (remove this line when it is).
+<!-- Active Sherlock? Add "sherlocks/<name>/" to .git/info/exclude until it is retired. -->
 
 | Field | Value |
 |---|---|
