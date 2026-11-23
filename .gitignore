@@ -16,3 +16,38 @@ flag.txt
 .vscode/
 flag.txt
 *flag*.txt
+
+# ---- Artefatti HTB: non entrano mai nella repo ----
+# archivi
+*.zip
+*.7z
+*.rar
+# log binari e catture di rete
+*.evtx
+*.pcap
+*.pcapng
+# memoria e dischi
+*.raw
+*.mem
+*.vmem
+*.dmp
+*.lime
+*.E01
+*.img
+*.vmdk
+*.vhd
+*.vhdx
+# eseguibili e sample
+*.exe
+*.dll
+*.elf
+*.bin
+# cartelle di lavoro (rete di sicurezza)
+loot/
+sample/
+extracted/
+work/
+# flag delle macchine
+flag.txt
+user.txt
+root.txt
