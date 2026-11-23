@@ -1,6 +1,5 @@
 # Hack The Box — Sherlock: Brutus
 
-> ⛔ PRIVATE — do not publish before the Sherlock is retired (remove this line when it is).
 
 | Field | Value |
 |---|---|
